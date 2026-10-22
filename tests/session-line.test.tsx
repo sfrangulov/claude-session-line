@@ -160,7 +160,7 @@ function fakeEngine(on: On, calls: Calls, over: Over = {}) {
     return { value: text }
   })
   on('process.run', ($, e) => {
-    calls.runs.push([...e.argv])
+    calls.runs.push([...e.argv, e.init?.cwd ?? ''])
     return { value: { exitCode: 0, stdout: ' 2 files changed, 12 insertions(+), 3 deletions(-)\n', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
   })
   on('command.register', () => ({ value: undefined }) as never)
@@ -221,7 +221,7 @@ describe('the module', () => {
       'Opus 5.5 · xhigh │ ▓▓░░░░░░░░ 21.0% │ ⎇ main (+12,-3) │ 1hr 5m │ 5h ░░░░░░░░░░ 3.0% (2h33m) │ wk ▓▓░░░░░░░░ 19.0% (5d33m)',
     )
     // one git, in the work tree found above the session's directory
-    expect(calls.runs).toEqual([['git', '--no-optional-locks', '-C', '/repo', 'diff', 'HEAD', '--shortstat']])
+    expect(calls.runs).toEqual([['git', '--no-optional-locks', 'diff', 'HEAD', '--shortstat', '/repo']])
   })
 
   test('a main-loop request adds the cache and its effort; a subagent request changes nothing', STATUS, async ($, on) => {

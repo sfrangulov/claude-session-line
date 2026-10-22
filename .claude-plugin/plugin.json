@@ -1,6 +1,6 @@
 {
   "name": "session-line",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "The Claude Code status line without a process per refresh: model and effort, context bar, git branch and changes, session length, 5-hour and weekly limits with their resets, and a prompt-cache meter (hit rate, countdown to expiry, advice, toasts, /cache table).",
   "author": {
     "name": "Sergei Frangulov",

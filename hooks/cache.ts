@@ -1,8 +1,8 @@
 /**
  * cache.ts — the pure half of the prompt-cache meter: no `$`, no engine.
  *
- * Taken from prompt-cache-control 0.1.0 (hooks/cache.ts), by claude-code-templates
- * (https://github.com/davila7/claude-code-templates), MIT licence; see LICENSE.
+ * Taken from prompt-cache-control 0.1.0 (hooks/cache.ts) by Daniel (San) Ávila, part of
+ * claude-code-templates, under the MIT licence; see LICENSE.
  * Changed here: bar() is gone. Tools read the status line's ▓░ bars off the
  * screen, so the meter draws no bar of its own.
  *
@@ -173,8 +173,8 @@ export function advise(last: Sample | undefined, prev: Sample | undefined, polic
     return {
       kind: 'expired',
       text: big
-        ? `expired: the next message rewrites ${fmtTokens(size)} tokens. /compact first, or /clear if the task is done`
-        : `expired: only ${fmtTokens(size)} tokens to rebuild, just keep going`,
+        ? `expired: the next message rewrites ${fmtCount(size)} tokens. /compact first, or /clear if the task is done`
+        : `expired: only ${fmtCount(size)} tokens to rebuild, just keep going`,
     }
   }
   if (left <= policy.warnMs) {
@@ -184,7 +184,7 @@ export function advise(last: Sample | undefined, prev: Sample | undefined, polic
   return { kind: 'warm', text: 'warm: keep going' }
 }
 
-export function fmtTokens(n: number): string {
+export function fmtCount(n: number): string {
   if (n < 1000) return String(n)
   if (n < 100_000) return `${(n / 1000).toFixed(1).replace(/\.0$/, '')}k`
   if (n < 1_000_000) return `${Math.round(n / 1000)}k`
@@ -385,7 +385,7 @@ export function idlePolicy(i: IdleInputs): IdleCompact {
     return { ...base, on: false, why: `not rolled out to this account (mode ${String(mode ?? 'off')})` }
   }
   const source = fromVar !== undefined ? 'CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS' : 'default'
-  return { ...base, on: true, why: `from ${fmtTokens(minTokens)} tokens (${source})` }
+  return { ...base, on: true, why: `from ${fmtCount(minTokens)} tokens (${source})` }
 }
 
 /**

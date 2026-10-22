@@ -24,8 +24,8 @@
  * context and the `5h` / `wk` bars for the limits, so the band and the pane
  * draw no bar glyph (▓░█▒▌▏) of their own.
  *
- * The cache meter is prompt-cache-control 0.1.0 by claude-code-templates
- * (https://github.com/davila7/claude-code-templates), MIT licence, merged in:
+ * The cache meter is prompt-cache-control 0.1.0 by Daniel (San) Ávila, part of
+ * claude-code-templates, MIT licence (see LICENSE), merged in:
  * its pure half is ./cache.ts; its hooks (turn.step samples, the TTL rules and
  * the TTL observed from request timing, idle compaction, the countdown
  * toasts, the band and the /cache pane) are carried over below. Changed: the
@@ -49,7 +49,7 @@ import {
   byTurn,
   fit,
   fmtClock,
-  fmtTokens,
+  fmtCount,
   hitRatio,
   idleCompactAt,
   idlePolicy,
@@ -126,7 +126,7 @@ function current(policy: Policy, now: number) {
   const disabled = last ? isCachingDisabled(last.model, env) : isCachingDisabled('', env)
   if (last && compacted && compacted.at > last.startedAt) {
     // the conversation the last request cached is gone: the next one starts from the summary
-    const sizes = compacted.before && compacted.after ? ` (${fmtTokens(compacted.before)} → ${fmtTokens(compacted.after)})` : ''
+    const sizes = compacted.before && compacted.after ? ` (${fmtCount(compacted.before)} → ${fmtCount(compacted.after)})` : ''
     const how = compacted.trigger === 'idle' ? 'compacted while idle' : 'compacted'
     const advice: Advice = { kind: 'cold', text: `${how}${sizes}: the next message starts from the summary` }
     return { last, advice, left: 0, idleAt: undefined, isCompacted: true }
@@ -177,7 +177,7 @@ function actionLine(policy: Policy, now: number): { text: string; color: string 
   if (!last) return undefined
   const size = promptTokens(last)
   if (advice.kind === 'soon' && size >= TOAST_MIN_TOKENS) {
-    return { color: 'yellow', text: `▲ cache lapses in ${fmtClock(left)}: send a message to keep ${fmtTokens(size)} tokens warm` }
+    return { color: 'yellow', text: `▲ cache lapses in ${fmtClock(left)}: send a message to keep ${fmtCount(size)} tokens warm` }
   }
   if (advice.kind === 'expired' && size >= policy.compactAtTokens) {
     return { color: 'red', text: `✖ cache ${advice.text}` }
@@ -274,7 +274,7 @@ async function rememberEffort($: EngineInterface, name: string, level: string) {
 async function refreshChanges($: EngineInterface) {
   if (!repo) return
   try {
-    const r = await $.process.run(['git', '--no-optional-locks', '-C', repo.dir, 'diff', 'HEAD', '--shortstat'], { timeoutMs: 10_000 })
+    const r = await $.process.run(['git', '--no-optional-locks', 'diff', 'HEAD', '--shortstat'], { cwd: repo.dir, timeoutMs: 10_000 })
     changes = parseShortstat(r.exitCode === 0 ? r.stdout : '')
   } catch {
     changes = undefined
@@ -350,7 +350,7 @@ function toastNearExpiry($: EngineInterface, now: number) {
   const mark = nextToastMark(secs, cfg.policy.warnMs / 1000, toastLevel)
   if (mark === undefined) return
   toastLevel = mark
-  const tail = secs <= (COUNTDOWN_MARKS[0] ?? 10) ? 'send a message now' : `send a message to keep ${fmtTokens(promptTokens(last))} tokens warm`
+  const tail = secs <= (COUNTDOWN_MARKS[0] ?? 10) ? 'send a message now' : `send a message to keep ${fmtCount(promptTokens(last))} tokens warm`
   $.ui.toast(`cache expires in ${secs >= 60 ? fmtClock(left) : `${secs}s`}: ${tail}`)
 }
 
@@ -503,7 +503,7 @@ export const register: Register = (on, options) => {
     if (e.agentId || trigger === 'precompute' || 'skip' in r) return r
     compacted = { at: Date.now(), trigger, before: r.tokensBefore, after: r.tokensAfter }
     if (trigger === 'idle') {
-      const sizes = r.tokensBefore && r.tokensAfter ? ` ${fmtTokens(r.tokensBefore)} → ${fmtTokens(r.tokensAfter)} tokens` : ''
+      const sizes = r.tokensBefore && r.tokensAfter ? ` ${fmtCount(r.tokensBefore)} → ${fmtCount(r.tokensAfter)} tokens` : ''
       $.ui.log(`session-line: compacted while idle${sizes}, before the ${ttl} cache lapsed`)
       if (showIdle && wantToast) $.ui.toast(`compacted while idle${sizes}: your next message starts from the summary`)
     }
@@ -652,12 +652,12 @@ export const register: Register = (on, options) => {
         <Text bold>{`${Math.round(hitRatio(last) * 100)}%`}</Text>
         {wide ? (
           <>
-            <Text color="green">{`read ${fmtTokens(last.read)}`}</Text>
-            <Text color="yellow">{`wrote ${fmtTokens(last.write)}`}</Text>
-            <Text color="cyan">{`new ${fmtTokens(last.fresh)}`}</Text>
+            <Text color="green">{`read ${fmtCount(last.read)}`}</Text>
+            <Text color="yellow">{`wrote ${fmtCount(last.write)}`}</Text>
+            <Text color="cyan">{`new ${fmtCount(last.fresh)}`}</Text>
           </>
         ) : (
-          <Text dimColor>{`${fmtTokens(promptTokens(last))} tok`}</Text>
+          <Text dimColor>{`${fmtCount(promptTokens(last))} tok`}</Text>
         )}
         {advice.kind !== 'uncached' && advice.kind !== 'off' && advice.kind !== 'cold' && (
           <Text bold color={left > 0 ? lifeColor(left, ttl, policy.warnMs) : 'red'}>{left > 0 ? `⏱ ${fmtClock(left)}` : '⏱ 0:00'}</Text>
@@ -704,7 +704,7 @@ export const register: Register = (on, options) => {
       if (!idle.on) return `${idle.why}`
       if (at !== undefined) return `if nobody types, Claude Code compacts at ${Math.round(idle.fraction * 100)}% of the 1h cache, ${idle.why}`
       if (ttl !== '1h') return `needs the 1h cache; this session's is ${ttl}`
-      if (last && promptTokens(last) < idle.minTokens) return `waits for ${fmtTokens(idle.minTokens)} tokens; the prompt is ${fmtTokens(promptTokens(last))}`
+      if (last && promptTokens(last) < idle.minTokens) return `waits for ${fmtCount(idle.minTokens)} tokens; the prompt is ${fmtCount(promptTokens(last))}`
       return `armed while the cache is warm, ${idle.why}`
     }
 
@@ -727,7 +727,7 @@ export const register: Register = (on, options) => {
 
         <Box key="advice" marginTop={1} flexDirection="column">
           <Text bold color={stateColor}>{sp(`${ICON[advice.kind]} ${advice.text}`)}</Text>
-          {last ? <Text dimColor>{sp(fit(`${last.model} · prompt ${fmtTokens(promptTokens(last))} tokens`, width))}</Text> : null}
+          {last ? <Text dimColor>{sp(fit(`${last.model} · prompt ${fmtCount(promptTokens(last))} tokens`, width))}</Text> : null}
         </Box>
 
         {showIdle ? (
@@ -746,9 +746,9 @@ export const register: Register = (on, options) => {
               <Text bold color={hitColor(Math.round(hitRatio(last) * 100))}>{sp(`${Math.round(hitRatio(last) * 100)}% hit`)}</Text>
             </Box>
             <Box flexDirection="row" columnGap={2}>
-              <Text color="green">{sp(`■ read ${fmtTokens(last.read)}`)}</Text>
-              <Text color="yellow">{sp(`■ wrote ${fmtTokens(last.write)}`)}</Text>
-              <Text color="cyan">{sp(`■ new ${fmtTokens(last.fresh)}`)}</Text>
+              <Text color="green">{sp(`■ read ${fmtCount(last.read)}`)}</Text>
+              <Text color="yellow">{sp(`■ wrote ${fmtCount(last.write)}`)}</Text>
+              <Text color="cyan">{sp(`■ new ${fmtCount(last.fresh)}`)}</Text>
             </Box>
           </Box>
         ) : null}
@@ -770,9 +770,9 @@ export const register: Register = (on, options) => {
               <Box key={`t:${row.turnId}`} flexDirection="row" columnGap={1}>
                 {cell(`c:turn:${row.turnId}`, 4, String(n))}
                 {cell(`c:steps:${row.turnId}`, 5, String(row.steps))}
-                {cell(`c:read:${row.turnId}`, 6, fmtTokens(row.read), 'green')}
-                {cell(`c:wrote:${row.turnId}`, 6, fmtTokens(row.write), 'yellow')}
-                {cell(`c:new:${row.turnId}`, 5, fmtTokens(row.fresh), 'cyan')}
+                {cell(`c:read:${row.turnId}`, 6, fmtCount(row.read), 'green')}
+                {cell(`c:wrote:${row.turnId}`, 6, fmtCount(row.write), 'yellow')}
+                {cell(`c:new:${row.turnId}`, 5, fmtCount(row.fresh), 'cyan')}
                 {cell(`c:hit:${row.turnId}`, 4, `${pct}%`, hitColor(pct), true)}
               </Box>
             )

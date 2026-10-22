@@ -45,14 +45,29 @@ A one-second timer redraws, and only when a text changed. Model, effort and HEAD
 
 ## What it reads, runs and stores
 
-- **Sends:** nothing. The mod makes no network requests and no model requests of its own.
-- **Runs:** `git --no-optional-locks -C <work tree> diff HEAD --shortstat`, at the start and after each turn. With `gitChanges: false` it runs nothing.
+- **Sends:** nothing, anywhere. The mod makes no network requests and no model requests, and passes nothing it reads to another program or service. What it reads is only drawn in the line.
+- **Starts:** one program, `git`, with fixed arguments: `git --no-optional-locks diff HEAD --shortstat`, run in the session's work tree at the start and after each turn. It counts the uncommitted insertions and deletions shown as `(+ins,-del)`. Its output is read and drawn, nothing more. With `gitChanges: false` the mod starts no program at all.
 - **Reads:**
-  - `.git/HEAD` of the work tree above the session's folder, and a worktree's `.git` file.
-  - `promptCacheTtl`, `idleCompaction` and `autoCompactEnabled` from the project's `.claude/settings.local.json` and `.claude/settings.json` and from `~/.claude/settings.json`, plus the `effortLevel` setting.
-  - From `~/.claude.json` (or `$CLAUDE_CONFIG_DIR/.claude.json`), only `autoCompactEnabled` and Claude Code's cached idle-compaction flag.
-  - The cache and compaction variables named below, `CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS`, `DISABLE_PROMPT_CACHING*`, `DISABLE_COMPACT`, `DISABLE_AUTO_COMPACT` and `HOME`.
+  - `.git/HEAD` of the work tree above the session's folder, and a worktree's `.git` file, for the branch name.
+  - `promptCacheTtl`, `idleCompaction` and `autoCompactEnabled` from the project's `.claude/settings.local.json` and `.claude/settings.json` and from the user's `.claude/settings.json`, plus the `effortLevel` setting.
+  - Two keys of Claude Code's global config file (`.claude.json` in the home folder, or in `CLAUDE_CONFIG_DIR`): `autoCompactEnabled` and the cached flag saying whether idle compaction is rolled out to the account. Nothing else in that file is kept.
+  - The environment variables listed under Cache meter, `CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS`, `DISABLE_PROMPT_CACHING*`, `DISABLE_COMPACT`, `DISABLE_AUTO_COMPACT`, `CLAUDE_CONFIG_DIR` and `HOME`.
 - **Stores:** the effort each model last ran at (`{"Opus 5.5": "xhigh"}`), in the mod's own store on this machine, so the line can show it before a session's first request.
+
+### Hooks
+
+Apart from drawing its own rows and answering its own `/cache` command, every hook only observes: it passes the event on unchanged and blocks or rewrites nothing.
+
+| Hook | What it does |
+| --- | --- |
+| `session.start`, `session.end` | registers `/cache`, reads the settings above, starts and stops the one-second timer; `/clear` resets the meter |
+| `session.measure` | takes the context fill and the limit windows |
+| `turn.step` | takes each main-loop request's effort and its four token counts; the request goes on as it was |
+| `turn.complete` | marks model, effort and git for a refresh after a turn |
+| `prompt.submit` | marks the line for a refresh after a prompt (a `/model`, `/effort` or `!` command may change it); the prompt goes on as typed |
+| `session.compact` | notes a compaction, so the meter stops counting down the old cache |
+| `command.run` (`/cache`), `ui.close`, `ui.press` | open and close the `/cache` pane |
+| `ui.render` on `PromptHint`, `AbovePrompt`, `Pane` | draws the two rows, the band and the pane |
 
 ## Cache meter
 

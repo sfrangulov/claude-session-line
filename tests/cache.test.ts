@@ -11,7 +11,7 @@ import {
   nextToastMark,
   byTurn,
   fmtClock,
-  fmtTokens,
+  fmtCount,
   hitRatio,
   idleCompactAt,
   idlePolicy,
@@ -71,10 +71,10 @@ describe('the countdown counts from the start of the request', () => {
     expect(fmtClock(3_500_000)).toBe('58:20')
     expect(fmtClock(3_600_000)).toBe('1:00:00')
     expect(fmtClock(1)).toBe('0:01')
-    expect(fmtTokens(950)).toBe('950')
-    expect(fmtTokens(84_200)).toBe('84.2k')
-    expect(fmtTokens(182_000)).toBe('182k')
-    expect(fmtTokens(1_200_000)).toBe('1.2M')
+    expect(fmtCount(950)).toBe('950')
+    expect(fmtCount(84_200)).toBe('84.2k')
+    expect(fmtCount(182_000)).toBe('182k')
+    expect(fmtCount(1_200_000)).toBe('1.2M')
     expect(Math.round(hitRatio(sample()) * 1000)).toBe(982)
   })
 })
