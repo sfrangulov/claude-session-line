@@ -1,0 +1,4 @@
+{
+  "description": "session-line: the status line ($.ui.status) and the prompt-cache meter; session.measure and turn.step feed it, a one-second clock.every redraws only when the text changed",
+  "modules": ["./register.tsx"]
+}

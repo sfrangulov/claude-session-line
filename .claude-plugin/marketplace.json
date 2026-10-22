@@ -1,0 +1,17 @@
+{
+  "name": "claude-session-line",
+  "owner": {
+    "name": "Sergei Frangulov",
+    "url": "https://github.com/sfrangulov"
+  },
+  "metadata": {
+    "description": "session-line: the Claude Code status line drawn by a mod, with a prompt-cache meter."
+  },
+  "plugins": [
+    {
+      "name": "session-line",
+      "source": "./",
+      "description": "The Claude Code status line without a process per refresh, with a prompt-cache meter."
+    }
+  ]
+}

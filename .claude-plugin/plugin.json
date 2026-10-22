@@ -1,0 +1,82 @@
+{
+  "name": "session-line",
+  "version": "0.1.0",
+  "description": "The Claude Code status line without a process per refresh: model and effort, context bar, git branch and changes, session length, 5-hour and weekly limits with their resets, and a prompt-cache meter (hit rate, countdown to expiry, advice, toasts, /cache table).",
+  "author": {
+    "name": "Sergei Frangulov",
+    "url": "https://github.com/sfrangulov"
+  },
+  "homepage": "https://github.com/sfrangulov/claude-session-line",
+  "repository": "https://github.com/sfrangulov/claude-session-line",
+  "license": "MIT",
+  "keywords": [
+    "mod",
+    "function-hooks",
+    "status-line",
+    "prompt-caching"
+  ],
+  "userConfig": {
+    "ttl": {
+      "type": "string",
+      "title": "Cache lifetime",
+      "description": "How long the prompt cache lives after a request: auto follows Claude Code's own rules (FORCE_PROMPT_CACHING_5M, CLAUDE_CODE_PROMPT_CACHE_TTL, promptCacheTtl, ENABLE_PROMPT_CACHING_1H, then 1 hour on a subscription and 5 minutes otherwise) and corrects itself from request timing; 5m or 1h pins it",
+      "default": "auto",
+      "options": [
+        "auto",
+        "5m",
+        "1h"
+      ]
+    },
+    "warnSeconds": {
+      "type": "number",
+      "title": "Warn before expiry (s)",
+      "description": "Seconds left at which the cache countdown shows seconds, the band asks for a message and a toast reminds you",
+      "default": 60
+    },
+    "compactAtTokens": {
+      "type": "number",
+      "title": "Large context (tokens)",
+      "description": "From this prompt size up, an expired cache suggests /compact (or /clear) and shows in the band",
+      "default": 100000
+    },
+    "place": {
+      "type": "string",
+      "title": "Where the line goes",
+      "description": "hint: two coloured rows under the prompt, above the engine's hint line; status: one plain $.ui.status entry, which the engine labels '⚠ session-line:'",
+      "default": "hint",
+      "options": [
+        "hint",
+        "status"
+      ]
+    },
+    "band": {
+      "type": "string",
+      "title": "Band above the prompt",
+      "description": "action: a line only when the cache needs you (about to lapse on a prompt of 20k tokens or more, or lapsed on a large one); always: the full meter row; off: none",
+      "default": "action",
+      "options": [
+        "action",
+        "always",
+        "off"
+      ]
+    },
+    "toast": {
+      "type": "boolean",
+      "title": "Toast near expiry",
+      "description": "Toasts as the cache lapses: at the warning threshold, then at 10, 3, 2 and 1 seconds (prompts of 20k tokens or more)",
+      "default": true
+    },
+    "idleCompact": {
+      "type": "boolean",
+      "title": "Idle compaction",
+      "description": "When Claude Code will compact a large idle conversation by itself before its 1-hour cache lapses, count down to it (⇣) and say when it happened",
+      "default": true
+    },
+    "gitChanges": {
+      "type": "boolean",
+      "title": "Git changes (+ins,-del)",
+      "description": "Count uncommitted changes with one git diff --shortstat at the session's start and at the end of each turn; off runs no process at all (the branch still shows)",
+      "default": true
+    }
+  }
+}
