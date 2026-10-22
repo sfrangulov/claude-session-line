@@ -76,7 +76,7 @@ const asTtl = (v: unknown): Ttl | undefined => (v === '5m' || v === '1h' ? v : u
 
 /**
  * Which lifetime Claude Code asks for on the main conversation, in the order
- * its documentation gives (https://code.claude.com/docs/en/prompt-caching,
+ * its documentation gives (the prompt-caching page of the Claude Code docs,
  * "Choose the TTL yourself"), after the mod's own `ttl` option:
  *
  *   FORCE_PROMPT_CACHING_5M, CLAUDE_CODE_PROMPT_CACHE_TTL, the promptCacheTtl
@@ -324,7 +324,7 @@ export function observeTtl(prev: Sample | undefined, cur: Sample, known: Ttl | u
  * of these hold, read from the 2.1.299 build:
  *
  *   - the rollout flag is on for the account (a server-side flag Claude Code
- *     caches in ~/.claude.json; `mode: "off"` there means it never runs, and
+ *     caches in its global config; `mode: "off"` there means it never runs, and
  *     `idleCompaction: true` does not turn it on)
  *   - auto-compact is on (no DISABLE_COMPACT / DISABLE_AUTO_COMPACT,
  *     autoCompactEnabled not false) and the idleCompaction setting is not false
@@ -379,7 +379,7 @@ export function idlePolicy(i: IdleInputs): IdleCompact {
   if (i.autoCompact === false) return { ...base, on: false, why: 'auto-compact is off (autoCompactEnabled)' }
   if (i.setting === false) return { ...base, on: false, why: 'turned off (idleCompaction: false)' }
   // without the cached flag there is no telling: a countdown to something that may never happen is worse than none
-  if (!flag) return { ...base, on: false, why: 'rollout flag not found in ~/.claude.json' }
+  if (!flag) return { ...base, on: false, why: "rollout flag not found in Claude Code's global config" }
   const mode = flag.mode
   if (mode !== 'compact' && mode !== 'compact_on_return') {
     return { ...base, on: false, why: `not rolled out to this account (mode ${String(mode ?? 'off')})` }
