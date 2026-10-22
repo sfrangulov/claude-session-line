@@ -1,5 +1,7 @@
 # session-line
 
+![session-line](.claude-plugin/icon.png)
+
 A Claude Code mod that draws the status line itself. A `statusLine` command starts a process on every refresh; this mod starts none, and adds a prompt-cache meter.
 
 ```
@@ -40,6 +42,17 @@ Claude Code first asks to add the marketplace (`y`), then for a scope. If you ha
 | cache | the token counts of each main-loop request | none |
 
 A one-second timer redraws, and only when a text changed. Model, effort and HEAD are read again once a minute and after each prompt and turn.
+
+## What it reads, runs and stores
+
+- **Sends:** nothing. The mod makes no network requests and no model requests of its own.
+- **Runs:** `git --no-optional-locks -C <work tree> diff HEAD --shortstat`, at the start and after each turn. With `gitChanges: false` it runs nothing.
+- **Reads:**
+  - `.git/HEAD` of the work tree above the session's folder, and a worktree's `.git` file.
+  - `promptCacheTtl`, `idleCompaction` and `autoCompactEnabled` from the project's `.claude/settings.local.json` and `.claude/settings.json` and from `~/.claude/settings.json`, plus the `effortLevel` setting.
+  - From `~/.claude.json` (or `$CLAUDE_CONFIG_DIR/.claude.json`), only `autoCompactEnabled` and Claude Code's cached idle-compaction flag.
+  - The cache and compaction variables named below, `CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS`, `DISABLE_PROMPT_CACHING*`, `DISABLE_COMPACT`, `DISABLE_AUTO_COMPACT` and `HOME`.
+- **Stores:** the effort each model last ran at (`{"Opus 5.5": "xhigh"}`), in the mod's own store on this machine, so the line can show it before a session's first request.
 
 ## Cache meter
 
